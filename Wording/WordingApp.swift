@@ -1,15 +1,26 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct WordingApp: App {
     @AppStorage("isDarkMode") private var isDarkMode = false
-    @State private var store = AppDataStore.sample()
+
+    let container: ModelContainer
+
+    init() {
+        do {
+            container = try ModelContainer(for: Language.self, Vocabulary.self, WordItem.self)
+        } catch {
+            fatalError("Failed to create model container: \(error)")
+        }
+        SampleData.seedIfNeeded(in: container.mainContext)
+    }
 
     var body: some Scene {
         WindowGroup {
             HomeScreen()
-                .environment(store)
                 .preferredColorScheme(isDarkMode ? .dark : .light)
         }
+        .modelContainer(container)
     }
 }

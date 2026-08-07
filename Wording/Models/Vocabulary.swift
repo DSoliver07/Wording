@@ -1,35 +1,26 @@
 import Foundation
-import Observation
+import SwiftData
 
-@Observable
-final class Vocabulary: Identifiable {
-    var id: UUID
+@Model
+final class Vocabulary {
+    @Attribute(.unique) var id: UUID
     var title: String
-    weak var language: Language?
+    var language: Language?
+    @Relationship(deleteRule: .cascade, inverse: \WordItem.vocabulary)
     var words: [WordItem]
 
     var knownCount: Int {
-        words.filter { $0.learned }.count
+        words.filter(\.learned).count
     }
 
     var totalCount: Int {
         words.count
     }
 
-    init(title: String, language: Language) {
+    init(title: String, language: Language? = nil) {
         self.id = UUID()
         self.title = title
         self.language = language
         self.words = []
-    }
-}
-
-extension Vocabulary: Hashable {
-    static func == (lhs: Vocabulary, rhs: Vocabulary) -> Bool {
-        lhs.id == rhs.id
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
     }
 }

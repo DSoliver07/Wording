@@ -1,7 +1,9 @@
 import SwiftUI
+import SwiftData
 
 struct HomeScreen: View {
-    @Environment(AppDataStore.self) private var store
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Language.title) private var languages: [Language]
 
     @State private var isAddingLanguage = false
     @State private var newLanguageTitle = ""
@@ -10,30 +12,32 @@ struct HomeScreen: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if store.languages.isEmpty {
-                    ContentUnavailableView(
-                        "No Languages",
-                        systemImage: "globe",
-                        description: Text("Tap + to create your first language.")
-                    )
-                } else {
-                    languageList
+            List {
+                Group {
+                    Text("Select a language")
+                        .font(.headline)
+                        .padding(.leading, 4)
+                    ForEach(languages) { language in
+                        languageRow(language)
+                    }
+                    addLanguageRow
                 }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 7, leading: 16, bottom: 7, trailing: 16))
             }
-            .navigationTitle("Wording")
+            .listStyle(.plain)
+            .safeAreaInset(edge: .top) {
+                WordingTitleBlob()
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
+                    .padding(.bottom, 12)
+            }
+            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Language.self) { language in
                 VocabularyListScreen(language: language)
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        newLanguageTitle = ""
-                        isAddingLanguage = true
-                    } label: {
-                        Label("Add Language", systemImage: "plus")
-                    }
-                }
                 ToolbarItemGroup(placement: .bottomBar) {
                     Button {
                         isShowingSettings = true
@@ -50,7 +54,7 @@ struct HomeScreen: View {
                 TextField("Title", text: $newLanguageTitle)
                 Button("Cancel", role: .cancel) {}
                 Button("Create") {
-                    store.addLanguage(title: newLanguageTitle)
+                    addLanguage()
                 }
             }
             .alert(
@@ -63,7 +67,7 @@ struct HomeScreen: View {
             ) { language in
                 Button("Cancel", role: .cancel) {}
                 Button("Delete", role: .destructive) {
-                    store.deleteLanguage(language)
+                    modelContext.delete(language)
                 }
             } message: { language in
                 Text("Are you sure you want to delete \(language.title)?")
@@ -71,32 +75,62 @@ struct HomeScreen: View {
         }
     }
 
-    private var languageList: some View {
-        List {
-            ForEach(store.languages) { language in
-                NavigationLink(value: language) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(language.title)
-                            .font(.headline)
-                        Text("^[\(language.vocabularies.count) vocabulary](inflect: true)")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .swipeActions(allowsFullSwipe: false) {
-                    Button {
-                        languagePendingDeletion = language
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                    .tint(.red)
-                }
-            }
+    private func addLanguage() {
+        let trimmed = newLanguageTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        modelContext.insert(Language(title: trimmed))
+    }
+
+    private func languageRow(_ language: Language) -> some View {
+        HStack {
+            Text(language.title)
+                .font(.headline)
+            Spacer()
         }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .background {
+            Capsule()
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.25), radius: 3, x: 0, y: 2)
+        }
+        .overlay(Capsule().stroke(.primary.opacity(0.8)))
+        .background(
+            NavigationLink(value: language) { EmptyView() }
+                .opacity(0)
+        )
+        .swipeActions(allowsFullSwipe: false) {
+            Button {
+                languagePendingDeletion = language
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            .tint(.red)
+        }
+    }
+
+    private var addLanguageRow: some View {
+        Button {
+            newLanguageTitle = ""
+            isAddingLanguage = true
+        } label: {
+            Text("Add new language")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background {
+                    Capsule()
+                        .fill(Color(.systemBackground))
+                        .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
+                }
+                .overlay(Capsule().stroke(.secondary.opacity(0.5), lineWidth: 1.2))
+        }
+        .buttonStyle(.plain)
     }
 }
 
 #Preview {
     HomeScreen()
-        .environment(AppDataStore.sample())
+        .modelContainer(PreviewData.container)
 }

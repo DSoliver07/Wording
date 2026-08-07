@@ -1,13 +1,14 @@
 import Foundation
-import Observation
+import SwiftData
 
-@Observable
-final class WordItem: Identifiable {
+@Model
+final class WordItem {
+    // Unique within its vocabulary only (assigned by JSON import), not globally.
     var id: Int
     var term: String
     var translation: String
     var learned: Bool
-    weak var vocabulary: Vocabulary?
+    var vocabulary: Vocabulary?
 
     init(id: Int, term: String, translation: String, learned: Bool = false) {
         self.id = id

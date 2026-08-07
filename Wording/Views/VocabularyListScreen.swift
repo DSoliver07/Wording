@@ -1,7 +1,8 @@
 import SwiftUI
+import SwiftData
 
 struct VocabularyListScreen: View {
-    @Environment(AppDataStore.self) private var store
+    @Environment(\.modelContext) private var modelContext
 
     let language: Language
 
@@ -10,9 +11,14 @@ struct VocabularyListScreen: View {
     @State private var vocabularyPendingDeletion: Vocabulary?
     @State private var isShowingSettings = false
 
+    // Relationship arrays are unordered in SwiftData, so sort for display.
+    private var vocabularies: [Vocabulary] {
+        language.vocabularies.sorted { $0.title < $1.title }
+    }
+
     var body: some View {
         Group {
-            if language.vocabularies.isEmpty {
+            if vocabularies.isEmpty {
                 ContentUnavailableView(
                     "No Vocabularies",
                     systemImage: "text.book.closed",
@@ -51,7 +57,7 @@ struct VocabularyListScreen: View {
             TextField("Title", text: $newVocabularyTitle)
             Button("Cancel", role: .cancel) {}
             Button("Create") {
-                store.addVocabulary(title: newVocabularyTitle, to: language)
+                addVocabulary()
             }
         }
         .alert(
@@ -64,27 +70,28 @@ struct VocabularyListScreen: View {
         ) { vocabulary in
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
-                store.deleteVocabulary(vocabulary)
+                modelContext.delete(vocabulary)
             }
         } message: { _ in
             Text("Are you sure you want to delete this vocabulary list?")
         }
     }
 
+    private func addVocabulary() {
+        let trimmed = newVocabularyTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        modelContext.insert(Vocabulary(title: trimmed, language: language))
+    }
+
     private var vocabularyList: some View {
         List {
-            ForEach(language.vocabularies) { vocabulary in
+            ForEach(vocabularies) { vocabulary in
                 NavigationLink(value: vocabulary) {
                     HStack {
                         Text(vocabulary.title)
                             .font(.headline)
                         Spacer()
-                        Text("\(vocabulary.knownCount)/\(vocabulary.totalCount)")
-                            .font(.subheadline.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(.quaternary, in: Capsule())
+                        ProgressPill(known: vocabulary.knownCount, total: vocabulary.totalCount)
                     }
                 }
                 .swipeActions(allowsFullSwipe: false) {
@@ -115,9 +122,10 @@ private struct StudyScreenPlaceholder: View {
 }
 
 #Preview {
-    let store = AppDataStore.sample()
+    let container = PreviewData.container
+    let language = try! container.mainContext.fetch(FetchDescriptor<Language>()).first!
     return NavigationStack {
-        VocabularyListScreen(language: store.languages[0])
+        VocabularyListScreen(language: language)
     }
-    .environment(store)
+    .modelContainer(container)
 }
