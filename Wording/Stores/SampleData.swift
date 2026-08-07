@@ -17,30 +17,39 @@ enum SampleData {
 
     @MainActor
     static func seed(in context: ModelContext) {
+        // Relationships must only be linked after every model is inserted,
+        // otherwise SwiftData silently drops them.
         let spanish = Language(title: "Spanish")
-        context.insert(spanish)
-
-        let food = Vocabulary(title: "Food & Dining", language: spanish)
-        food.words = [
-            WordItem(id: 1, term: "queso", translation: "cheese", learned: true),
-            WordItem(id: 2, term: "manzana", translation: "apple"),
-            WordItem(id: 3, term: "pan", translation: "bread"),
-        ]
-
-        let travel = Vocabulary(title: "Travel", language: spanish)
-        travel.words = [
-            WordItem(id: 1, term: "aeropuerto", translation: "airport", learned: true),
-            WordItem(id: 2, term: "maleta", translation: "suitcase"),
-        ]
-
         let german = Language(title: "German")
+        context.insert(spanish)
         context.insert(german)
 
-        let basics = Vocabulary(title: "Basics", language: german)
-        basics.words = [
-            WordItem(id: 1, term: "Hallo", translation: "hello", learned: true),
-            WordItem(id: 2, term: "Danke", translation: "thank you"),
+        let vocabularies: [(Vocabulary, Language, [WordItem])] = [
+            (Vocabulary(title: "Food & Dining"), spanish, [
+                WordItem(id: 1, term: "queso", translation: "cheese", learned: true),
+                WordItem(id: 2, term: "manzana", translation: "apple"),
+                WordItem(id: 3, term: "pan", translation: "bread"),
+            ]),
+            (Vocabulary(title: "Travel"), spanish, [
+                WordItem(id: 1, term: "aeropuerto", translation: "airport", learned: true),
+                WordItem(id: 2, term: "maleta", translation: "suitcase"),
+            ]),
+            (Vocabulary(title: "Basics"), german, [
+                WordItem(id: 1, term: "Hallo", translation: "hello", learned: true),
+                WordItem(id: 2, term: "Danke", translation: "thank you"),
+            ]),
         ]
+
+        for (vocabulary, language, words) in vocabularies {
+            context.insert(vocabulary)
+            vocabulary.language = language
+            for word in words {
+                context.insert(word)
+                word.vocabulary = vocabulary
+            }
+        }
+
+        try? context.save()
     }
 }
 

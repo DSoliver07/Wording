@@ -30,7 +30,7 @@ struct VocabularyListScreen: View {
         }
         .navigationTitle(language.title)
         .navigationDestination(for: Vocabulary.self) { vocabulary in
-            StudyScreenPlaceholder(vocabulary: vocabulary)
+            StudyScreen(vocabulary: vocabulary)
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -80,7 +80,9 @@ struct VocabularyListScreen: View {
     private func addVocabulary() {
         let trimmed = newVocabularyTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        modelContext.insert(Vocabulary(title: trimmed, language: language))
+        let vocabulary = Vocabulary(title: trimmed)
+        modelContext.insert(vocabulary)
+        vocabulary.language = language
     }
 
     private var vocabularyList: some View {
@@ -104,20 +106,6 @@ struct VocabularyListScreen: View {
                 }
             }
         }
-    }
-}
-
-/// Temporary destination until the Study screen is implemented.
-private struct StudyScreenPlaceholder: View {
-    let vocabulary: Vocabulary
-
-    var body: some View {
-        ContentUnavailableView(
-            "Coming Soon",
-            systemImage: "book",
-            description: Text("The study screen for \(vocabulary.title) will be added later.")
-        )
-        .navigationTitle(vocabulary.title)
     }
 }
 

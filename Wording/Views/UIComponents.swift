@@ -64,12 +64,44 @@ struct ProgressPill: View {
     }
 }
 
+/// A circular learned-progress indicator: a green arc sweeps the ring
+/// between two outlined circles, with the percentage in the middle.
+struct ProgressRing: View {
+    /// Learned fraction, 0...1.
+    var fraction: Double
+    var ringWidth: CGFloat = 34
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(.primary, lineWidth: 1.5)
+            Circle()
+                .trim(from: 0, to: fraction)
+                .stroke(
+                    .green.opacity(0.85),
+                    style: StrokeStyle(lineWidth: ringWidth - 6, lineCap: .butt)
+                )
+                .rotationEffect(.degrees(-90))
+                .padding(ringWidth / 2 + 2)
+            Circle()
+                .fill(Color(.systemGray6))
+                .overlay(Circle().stroke(.primary, lineWidth: 1.5))
+                .padding(ringWidth + 4)
+            Text("\(Int((fraction * 100).rounded()))%")
+                .font(.system(size: 46, weight: .bold, design: .rounded))
+                .monospacedDigit()
+        }
+    }
+}
+
 #Preview {
     VStack(spacing: 24) {
         WordingTitleBlob()
         ProgressPill(known: 600, total: 1000)
             .frame(width: 500)
         ProgressPill(known: 0, total: 0)
+        ProgressRing(fraction: 0.5)
+            .frame(width: 240, height: 240)
     }
     .padding()
 }
