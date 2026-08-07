@@ -32,6 +32,27 @@ struct WordingTitleBlob: View {
     }
 }
 
+/// The outlined capsule used for full-width navigation and action buttons.
+struct CapsuleButtonLabel: View {
+    let title: String
+    var alignment: Alignment = .center
+
+    var body: some View {
+        Text(title)
+            .font(.headline)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
+            .frame(maxWidth: .infinity, alignment: alignment)
+            .background {
+                Capsule()
+                    .fill(Color(.systemBackground))
+                    .shadow(color: .black.opacity(0.25), radius: 3, x: 0, y: 2)
+            }
+            .overlay(Capsule().stroke(.primary.opacity(0.8), lineWidth: 1.5))
+    }
+}
+
 /// A "known / total" capsule badge whose background fills with green
 /// from the left in proportion to the learned fraction.
 struct ProgressPill: View {
