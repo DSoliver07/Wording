@@ -24,14 +24,14 @@ jobs:
         run: xcodebuild -version
 
       - name: Build and test
-          run: |
-            set -o pipefail
-            xcodebuild test \
-              -project Wording.xcodeproj \
-              -scheme Wording \
-              -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
-              CODE_SIGNING_ALLOWED=NO \
-              | xcbeautify --renderer github-actions
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Wording.xcodeproj \
+            -scheme Wording \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions
 
   # Placeholder for the deployment leg. Uploading to TestFlight requires an
   # Apple Developer Program membership plus repo secrets (signing certificate,
